@@ -44,7 +44,7 @@
 | 角色 | Profile 路径 | 职责 |
 |------|-------------|------|
 | 🎯 **项目总监 (Director)** | `roles/project-director/profile.md` | 状态机控制、角色编排、质量守门 |
-| 📋 **产品经理 (PM)** | `roles/product-manager/profile.md` | 需求分析、PRD 产出、HITL 决策请求 |
+| 📋 **产品经理 (PM)** | `roles/product-manager/profile.md` | 市场调研、竞品分析、方案推荐、PRD 产出、HITL 决策 |
 | 🖌️ **UI/UX 设计师** | `roles/ui-ux-designer/profile.md` | 设计规范、Design Token、组件状态机 |
 | 🛠️ **全栈工程师 (Dev)** | `roles/fullstack-dev-engineer/profile.md` | 技术方案、脚手架初始化、代码落盘 |
 | 🧪 **质量保障 (QA)** | `roles/quality-assurance/profile.md` | 可测性审查、测试计划、Code Review |
@@ -151,8 +151,16 @@ node tools/file_ops.js json state/state.json
 **2. 调用 PM**
 - 加载 `roles/product-manager/profile.md`
 - 将任务描述传递给 PM
-- PM 产出 PRD（必须遵循 `templates/prd-template.md` 结构）
-- 写入 `paopao-task/{project_name}/prd.md`
+- PM 按流程执行：需求解构 → 市场调研 → 竞品分析
+  → 方案推荐 → PRD 产出
+- PM 先用 `scripts/pm_research.js search-queries` 生成
+  搜索词，用联网搜索获取真实数据，再用 market/
+  competitive 命令进行结构化分析
+- PM 可使用 `scripts/pm_state.js` 管理自身工作状态
+- 中间报告写入 `paopao-task/{project_name}/market-report.md`
+  和 `competitive-report.md`
+- 最终 PRD 写入 `paopao-task/{project_name}/prd.md`
+  （遵循 `templates/prd-template.md` 增强结构）
 - 更新 state.json：`pm_prd` 移入 `completed_steps`
 
 **3. 调用 UI/UX**

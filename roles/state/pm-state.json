@@ -1,0 +1,14 @@
+{
+  "project": "",
+  "status": "idle",
+  "current_step": "",
+  "completed_steps": [],
+  "decisions": [],
+  "context_budget": {
+    "used_lines": 0,
+    "max_lines": 200,
+    "warnings": []
+  },
+  "created_at": null,
+  "updated_at": "2026-06-14T12:41:11.575Z"
+}
