@@ -67,11 +67,17 @@ node tools/file_ops.js write state/state.json '<json_string>'
    - 初始化 `state/state.json`
    - 输出项目初始化摘要
 
-2. **调用 PM 角色**
-   - 加载 `roles/product-manager/profile.md` 作为 PM 的 System Prompt
-   - 将任务描述传递給 PM
-   - PM 输出 PRD 后，写入 `paopao-task/{project_name}/prd.md`
-   - 更新 `state.json`: 添加 `pm_prd` 到 completed_steps
+ 2. **调用 PM 角色**
+    - 加载 `roles/product-manager/profile.md` 作为 PM 的 System Prompt
+    - 将任务描述传递给 PM
+    - PM 依次执行：需求解构 → 市场调研 → 竞品分析
+      → 方案推荐 → PRD 产出
+    - PM 优先使用联网搜索进行真实数据调研，
+      再通过 `scripts/pm_research.js` 结构化分析
+    - PM 使用 `scripts/pm_state.js` 管理自身工作状态
+    - 中间报告写入 `paopao-task/{project_name}/`（可选）
+    - 最终 PRD 写入 `paopao-task/{project_name}/prd.md`
+    - 更新 `state.json`: 添加 `pm_prd` 到 completed_steps
 
 3. **调用 UI/UX 角色**
    - 加载 `roles/ui-ux-designer/profile.md`
