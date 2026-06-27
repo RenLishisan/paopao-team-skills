@@ -43,7 +43,7 @@
 
 | 角色 | Profile 路径 | 职责 |
 |------|-------------|------|
-| 🎯 **项目总监 (Director)** | `roles/project-director/profile.md` | 状态机控制、角色编排、质量守门 |
+| 🎯 **项目总监 (Director)** | `roles/project-director/profile.md` | 战略对齐、干系人管理、风险驾驭、决策管理、状态机控制、角色编排、质量治理、冲突仲裁、事后复盘 |
 | 📋 **产品经理 (PM)** | `roles/product-manager/profile.md` | 市场调研、竞品分析、方案推荐、PRD 产出、HITL 决策 |
 | 🖌️ **UI/UX 设计师** | `roles/ui-ux-designer/profile.md` | 设计规范、Design Token、组件状态机 |
 | 🛠️ **全栈工程师 (Dev)** | `roles/fullstack-dev-engineer/profile.md` | 技术方案、脚手架初始化、代码落盘 |
@@ -64,6 +64,8 @@
 ```json
 {
   "project_name": "项目名称",
+  "project_size": "small|medium|large",
+  "methodology": "agile|waterfall|hybrid",
   "current_phase": "planning",
   "completed_steps": [],
   "pending_steps": ["pm_prd", "ui_ux_design", "dev_plan", "qa_plan"],
@@ -146,6 +148,11 @@ node tools/file_ops.js json state/state.json
 - 解析任务描述，确定 `project_name`
 - 创建 `paopao-task/{project_name}/` 目录
 - 初始化 `state/state.json`，`current_phase: "planning"`
+- Director 执行愿景定义，写入 `vision.md`
+- Director 初始化风险登记表 `risk-log.md`
+- Director 初始化决策日志 `decision-log.md`
+- Director 使用 `templates/README_blueprint.md` 生成
+  README 骨架 `README.md`
 - 输出项目初始化摘要
 
 **2. 调用 PM**
@@ -161,6 +168,9 @@ node tools/file_ops.js json state/state.json
   和 `competitive-report.md`
 - 最终 PRD 写入 `paopao-task/{project_name}/prd.md`
   （遵循 `templates/prd-template.md` 增强结构）
+- Director 执行质量门禁检查（结构完整性、一致性、
+  可操作性、边界合规）
+- Director 更新风险登记表和决策日志
 - 更新 state.json：`pm_prd` 移入 `completed_steps`
 
 **3. 调用 UI/UX**
@@ -168,6 +178,8 @@ node tools/file_ops.js json state/state.json
 - 使用 `tools/context_loader.js` 分块读取 PRD，传递给 UI/UX
 - UI/UX 产出设计规范（必须遵循 `templates/design-template.md`）
 - 写入 `paopao-task/{project_name}/design.md`
+- Director 执行质量门禁检查
+- Director 更新风险登记表和决策日志
 - 更新 state.json
 
 **4. 调用 Dev**
@@ -175,6 +187,8 @@ node tools/file_ops.js json state/state.json
 - 分块读取 PRD + 设计规范，传递给 Dev
 - Dev 产出技术方案（必须遵循 `templates/dev-template.md`）
 - 写入 `paopao-task/{project_name}/dev-plan.md`
+- Director 执行质量门禁检查
+- Director 更新风险登记表和决策日志
 - 更新 state.json
 
 **5. 调用 QA**
@@ -182,11 +196,15 @@ node tools/file_ops.js json state/state.json
 - 分块读取 PRD + 设计规范 + 技术方案，传递给 QA
 - QA 产出测试计划（必须遵循 `templates/test-template.md`）
 - 写入 `paopao-task/{project_name}/qa-plan.md`
+- Director 执行质量门禁检查
+- Director 更新风险登记表和决策日志
 - 更新 state.json
 
 **6. 交接仪式**
 - 设置 `current_phase` 为 `planning_complete`
-- 输出交接提示词（模板见 Director Profile 第五节）
+- 输出交接提示词（模板见 Director Profile 第十四章）
+- 交接内容包括：愿景文档、风险登记表、决策日志、
+  质量治理日志
 
 ---
 
@@ -215,7 +233,10 @@ node tools/file_ops.js json state/state.json
 - QA 编写并执行测试用例
 - 更新 state.json
 
-**5. 完成**
+**5. 完成与复盘**
+- Director 执行事后复盘，写入
+  `paopao-task/{project_name}/retrospective.md`
+- 模式沉淀：将可复用的经验记录到 `state/patterns/`
 - 设置 `current_phase` 为 `complete`
 - 输出项目完成报告
 
@@ -261,7 +282,11 @@ node tools/context_loader.js paopao-task/project-name/prd.md 100 101
 - ✅ 按需加载角色：一次只加载一个角色的 Profile
 - ✅ 分块读取大文件，使用 `context_loader.js`
 - ✅ 状态变更后立即写入 `state.json`
-- ✅ 阶段一完成时，输出完整的交接提示词
+- ✅ 项目初始化时创建 vision.md、risk-log.md、decision-log.md
+- ✅ 每个角色产出后执行质量门禁检查
+- ✅ 阶段一完成时，输出完整的交接提示词（含风险日志、
+   决策日志）
+- ✅ 项目完成后执行事后复盘
 - ✅ 遵守所选框架/语言的官方最佳实践
 - ✅ Dev 必须使用官方脚手架/CLI 初始化项目，禁止从零手写配置
 
