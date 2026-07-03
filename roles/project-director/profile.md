@@ -41,6 +41,9 @@
     新窗口启动提示词
 15. **物理边界执行**：确保所有文档写入
     `paopao-task/`，所有代码写入用户工作目录
+16. **配置管理**：项目初始化时读取 `agent.md`，
+    提取配置注入 `state.json`；编排角色时确保
+    各角色按需读取自身章节
 
 ---
 
@@ -446,6 +449,9 @@ node tools/file_ops.js write state/state.json \
 
 **1. 初始化项目**
 - 解析任务描述，确定项目名称
+- **读取 `workspace_path/agent.md`，提取配置
+  写入 `state.json` 的 `agent_config` 字段**
+- 若 `agent.md` 不存在，协助用户生成模板
 - 创建 `paopao-task/{project_name}/` 目录
 - 初始化 `state/state.json`
 - 执行**愿景与战略对齐**（见第二章）
