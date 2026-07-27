@@ -23,12 +23,42 @@ function generateHandoverPrompt(state, taskPath) {
     { role: 'QA', label: '测试计划', name: 'qa-plan.md' },
   ];
 
+  const deliverables = [
+    { label: '愿景文档', name: 'vision.md' },
+    { label: '风险登记表', name: 'risk-log.md' },
+    { label: '决策日志', name: 'decision-log.md' },
+  ];
+
   const docLines = documents.map(d => {
     const fullPath = path.join(taskPath, d.name);
     const exists = fs.existsSync(fullPath);
     const status = exists ? '✅' : '❌';
     return `  ${status} ${d.role} - ${d.label}: ${fullPath}`;
   }).join('\n');
+
+  const deliverableLines = deliverables.filter(
+    d => fs.existsSync(path.join(taskPath, d.name))
+  ).map(d => {
+    return `  📄 ${d.label}: ${path.join(taskPath, d.name)}`;
+  }).join('\n');
+
+  const riskLogPath = path.join(taskPath, 'risk-log.md');
+  const hasRisks = fs.existsSync(riskLogPath);
+  let riskSummary = '';
+  if (hasRisks) {
+    try {
+      const content = fs.readFileSync(riskLogPath, 'utf-8');
+      const highRiskLines = content.split('\n').filter(
+        l => l.includes('高') && l.startsWith('|')
+      );
+      if (highRiskLines.length > 0) {
+        riskSummary = '\n待处理风险:\n' +
+          highRiskLines.slice(0, 3).map(l =>
+            `  ⚠️ ${l.trim()}`
+          ).join('\n');
+      }
+    } catch (_) { /* ignore read errors */ }
+  }
 
   const handover = `
 ========================================
@@ -40,6 +70,10 @@ function generateHandoverPrompt(state, taskPath) {
 
 已完成产出:
 ${docLines}
+
+关键交付物:
+${deliverableLines || '  (无额外交付物)'}
+${riskSummary}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 复制以下内容到新窗口启动阶段二：
@@ -55,10 +89,14 @@ paopao-build / ${state.project_name}
 
 关键文档索引:
 ${documents.map(d => `  - ${d.label}: ${path.join(taskPath, d.name)}`).join('\n')}
+${deliverables.filter(
+  d => fs.existsSync(path.join(taskPath, d.name))
+).map(d => `  - ${d.label}: ${path.join(taskPath, d.name)}`).join('\n')}
 
 注意:
   - 所有代码将写入用户工作目录: ${state.workspace_path}
   - 先读取 PRD 了解全貌，再逐步读取详细设计
+  - 查阅风险日志关注已知风险项
 ========================================
   `.trim();
 
