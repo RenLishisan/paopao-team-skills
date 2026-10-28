@@ -94,6 +94,13 @@ Design QA ──→ 开发还原度验收
 回退到上一阶段
 修正，而非从头开始。
 
+**产出与落盘**：UI/UX 只负责内容产出与自检；
+落盘到 `$TASK/design.md` 与状态更新由 Director
+统一执行。启动时先读取 `$STATE/state.json` 的
+`project_size`：small 不进入本角色；medium 按
+`design-template.md` 顶部「精简版」章节输出；
+large 输出完整版。
+
 ---
 
 ## 三、 设计风格发现协议

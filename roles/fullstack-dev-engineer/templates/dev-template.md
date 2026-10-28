@@ -7,6 +7,20 @@
 
 ---
 
+## 适用模式与章节裁剪（先读再填）
+
+| project_size | 输出章节 | 说明 |
+|--------------|----------|------|
+| small | 本模板整体不使用 | 直接编码，README 补 ≤30 行技术说明 |
+| medium（精简版） | 一~六、九、十二 | 核心选型/结构/架构/API/数据/计划/测试/ADR |
+| large（完整版） | 一~十九 全部 | 含全部跨角色交付规范 |
+
+> 读取协议：先用 context_loader 只读本节
+> （顶部 60 行），确认本模式章节清单后跳读
+> 对应段落，禁止全量读取。
+
+---
+
 ## 一、 技术栈选型
 
 ### 1.1 技术选型总览
@@ -1596,8 +1610,8 @@ pnpm db:migrate status
 |--------|----------|----------|----------|----------|
 | PRD v1.0 | PM | Dev/UI/QA | 所有 P0 功能有明确 AC | `paopao-task/{{project}}/prd.md` |
 | 设计规范 v1.0 | UI/UX | Dev/QA | 组件库、Token、状态机完整 | `paopao-task/{{project}}/design.md` |
-| 技术方案 v1.0 (本文档) | Dev | PM/UI/QA/Ops | 13 个章节完整、ADR 记录关键决策 | `paopao-task/{{project}}/tech-design.md` |
-| 测试计划 v1.0 | QA | Dev/PM | 覆盖所有 AC、环境就绪 | `paopao-task/{{project}}/test-plan.md` |
+| 技术方案 v1.0 (本文档) | Dev | PM/UI/QA/Ops | 已完成所选模式规定的章节、ADR 记录关键决策 | `paopao-task/{{project}}/dev-plan.md` |
+| 测试计划 v1.0 | QA | Dev/PM | 覆盖所有 AC、环境就绪 | `paopao-task/{{project}}/qa-plan.md` |
 | 部署架构图 | DevOps | Dev/PM | 拓扑、配置、容量规划完整 | `paopao-task/{{project}}/deployment.md` |
 
 ### 18.2 阶段二里程碑验收清单

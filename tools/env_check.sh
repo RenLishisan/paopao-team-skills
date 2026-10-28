@@ -59,12 +59,28 @@ check_file() {
     fi
 }
 
+check_file "SKILL.md"
 check_file "main.md"
+check_file "templates/agent-template.md"
+check_file ".opencode/command/paopao.md"
+check_file ".opencode/command/paopao-build.md"
+check_file ".opencode/command/paopao-status.md"
+check_file ".claude/commands/paopao.md"
+check_file ".claude/commands/paopao-build.md"
+check_file ".claude/commands/paopao-status.md"
 check_file "roles/project-director/profile.md"
 check_file "roles/product-manager/profile.md"
 check_file "roles/ui-ux-designer/profile.md"
 check_file "roles/fullstack-dev-engineer/profile.md"
 check_file "roles/quality-assurance/profile.md"
+check_file "roles/project-director/scripts/generate_handover_prompt.js"
+check_file "roles/product-manager/scripts/pm_research.js"
+check_file "roles/product-manager/scripts/pm_state.js"
+check_file "roles/project-director/templates/README_blueprint.md"
+check_file "roles/product-manager/templates/prd-template.md"
+check_file "roles/ui-ux-designer/templates/design-template.md"
+check_file "roles/fullstack-dev-engineer/templates/dev-template.md"
+check_file "roles/quality-assurance/templates/test-template.md"
 check_file "tools/file_ops.js"
 check_file "tools/context_loader.js"
 

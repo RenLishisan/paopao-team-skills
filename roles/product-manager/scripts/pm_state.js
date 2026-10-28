@@ -4,8 +4,13 @@
  * pm_state.js - PM 工作状态管理工具
  * @author: RenLishisan
  * @description: 管理 PM 角色的工作状态、进度、
- *   决策记录和上下文预算。状态持久化到
- *   state/pm-state.json，与 Director 的状态隔离。
+ *   决策记录和上下文预算。状态文件定位优先级:
+ *   1) PAOPAO_STATE_FILE 精确文件路径
+ *   2) PAOPAO_STATE_DIR  目录 + /pm-state.json
+ *      （Director 编排 PM 时导出 $STATE 目录）
+ *   3) 兜底 ./state/pm-state.json（仅本地试验用）
+ *   与 Director 的主状态 state.json 分离，
+ *   但同属项目状态区，严禁写回 skill 仓库目录。
  * @time: 2026/6/14
  *
  * 使用方式:
@@ -15,6 +20,7 @@
  *   node pm_state.js addDecision <id> <question>
  *   node pm_state.js resolveDecision <id> <summary>
  *   node pm_state.js completeStep <step_name>
+ *   node pm_state.js addLines <n>        累计上下文消耗
  *   node pm_state.js status
  *   node pm_state.js budget
  *
@@ -28,9 +34,32 @@ const path = require('path');
 // 配置
 // ---------------------------------------------------------------------------
 
-const STATE_FILE = path.resolve(
-  __dirname, '..', '..', 'state', 'pm-state.json'
-);
+/**
+ * @author: RenLishisan
+ * @description: 解析 PM 状态文件路径（环境变量优先，
+ *   兜底 ./state/pm-state.json 并标记回退）
+ **/
+function resolveStateFile() {
+  if (process.env.PAOPAO_STATE_FILE) {
+    return {
+      file: path.resolve(process.env.PAOPAO_STATE_FILE),
+      fallback: false
+    };
+  }
+  if (process.env.PAOPAO_STATE_DIR) {
+    return {
+      file: path.join(
+        path.resolve(process.env.PAOPAO_STATE_DIR),
+        'pm-state.json'
+      ),
+      fallback: false
+    };
+  }
+  return { file: path.resolve('state', 'pm-state.json'), fallback: true };
+}
+
+const STATE_RESOLVE = resolveStateFile();
+const STATE_FILE = STATE_RESOLVE.file;
 
 const DEFAULT_STATE = {
   project: '',
@@ -276,6 +305,42 @@ function cmdBudget() {
   return { success: true };
 }
 
+/**
+ * @author: RenLishisan
+ * @description: 累计上下文消耗行数；超过 80% 写入警告
+ * @param {string} rawLines
+ **/
+function cmdAddLines(rawLines) {
+  const read = readState();
+  if (!read.success) return read;
+
+  const delta = Number(rawLines);
+  if (!Number.isFinite(delta) || delta <= 0) {
+    return { success: false, error: '行数必须为正数' };
+  }
+
+  const budget = read.data.context_budget;
+  budget.used_lines = Math.max(
+    0, (budget.used_lines || 0) + delta
+  );
+
+  if (budget.used_lines > budget.max_lines * 0.8) {
+    const warn = `上下文预算消耗超 80%: `
+      + `${budget.used_lines}/${budget.max_lines}，`
+      + `建议将中间产物落盘后清空内存`;
+    if (!budget.warnings.includes(warn)) {
+      budget.warnings.push(warn);
+    }
+  }
+
+  const result = writeState(read.data);
+  if (result.success) {
+    console.log(`✅ 已累计 ${delta} 行 → `
+      + `${budget.used_lines}/${budget.max_lines}`);
+  }
+  return result;
+}
+
 function cmdReset() {
   const result = writeState({ ...DEFAULT_STATE });
   if (result.success) {
@@ -300,9 +365,14 @@ function printUsage() {
   resolveDecision <id>   解决决策
     [summary]
   completeStep <name>    标记步骤完成
+  addLines <n>           累计上下文消耗行数
   status                 查看当前状态摘要
   budget                 查看上下文预算
   reset                  重置状态为默认
+
+状态文件定位:
+  PAOPAO_STATE_FILE > PAOPAO_STATE_DIR > ./state/
+  （正式运行由 Director 导出 PAOPAO_STATE_DIR=$STATE）
 
 示例:
   node pm_state.js init "my-app"
@@ -317,6 +387,14 @@ function printUsage() {
 
 function main() {
   const args = process.argv.slice(2);
+
+  if (STATE_RESOLVE.fallback) {
+    console.error(
+      '⚠️ 未设置 PAOPAO_STATE_DIR/PAOPAO_STATE_FILE，'
+      + 'PM 状态回退使用 ./state/pm-state.json'
+      + '（正式运行请由 Director 先导出 PAOPAO_STATE_DIR=$STATE）'
+    );
+  }
 
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     printUsage();
@@ -371,6 +449,14 @@ function main() {
         process.exit(1);
       }
       result = cmdCompleteStep(rest[0].toLowerCase());
+      break;
+
+    case 'addlines':
+      if (rest.length < 1) {
+        console.error('❌ 缺少行数');
+        process.exit(1);
+      }
+      result = cmdAddLines(rest[0]);
       break;
 
     case 'status':

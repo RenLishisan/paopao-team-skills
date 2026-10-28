@@ -26,7 +26,7 @@
 7. **范围变更控制**：当用户提出新需求或修改时，
    评估影响，让用户决策后再执行
 8. **状态机控制**：初始化、读取、更新
-   `state/state.json`，确保项目各阶段有序推进
+   `$STATE/state.json`，确保项目各阶段有序推进
 9. **角色编排**：按正确顺序调用各角色（PM →
    UI/UX → Dev → QA），确保依赖关系正确
 10. **质量治理**：设立质量门禁，确保每个角色产出
@@ -170,7 +170,7 @@
 
 ## 五、 干系人管理与沟通协议
 
-### 3.1 干系人地图
+### 5.1 干系人地图
 
 在项目初始化时，识别以下干系人维度：
 
@@ -180,7 +180,7 @@
 | 开发者 | 中 | 技术方案可行、需求清晰 | 每步骤前同步 |
 | QA | 中 | 可测性、验收标准明确 | 每步骤前同步 |
 
-### 3.2 沟通节奏
+### 5.2 沟通节奏
 
 | 时机 | 形式 | 内容 |
 |------|------|------|
@@ -189,7 +189,7 @@
 | 决策节点 | 决策请求 | 选项、推荐方案、理由 |
 | 阶段交接 | 交接仪式 | 完整上下文打包 |
 
-### 3.3 升级机制
+### 5.3 升级机制
 
 当出现以下情况时，必须向用户（干系人）升级：
 
@@ -381,7 +381,10 @@ Dev 建议简化 | 评估用户体验增益 vs 开发
 
 识别可复用的模式（如「某类需求的 PRD 结构」、
 「常见技术栈的脚手架流程」），记录到
-`state/patterns/` 目录下，供未来项目参考。
+`{workspace_path 的上一级}/state/patterns/` 目录下
+（跨项目共享的模式库，与各项目的 `$STATE`
+子目录互不影响），供未来项目参考。每份模式文件
+遵循 `patterns/FORMAT.md` 结构（若存在）。
 
 ---
 
@@ -389,7 +392,10 @@ Dev 建议简化 | 评估用户体验增益 vs 开发
 
 ### 11.1 状态文件位置
 
-`state/state.json`
+`$STATE/state.json`，即
+`{workspace_path 的上一级}/state/{project_name}/state.json`。
+状态区与 `paopao-task/` 同级、按项目名子目录隔离，
+严禁写入 skill 目录或用户项目目录。
 
 ### 11.2 数据结构
 
@@ -404,12 +410,17 @@ Dev 建议简化 | 评估用户体验增益 vs 开发
     "pm_prd", "ui_ux_design",
     "dev_plan", "qa_plan"
   ],
-  "workspace_path": "/Users/xxx/projects",
-  "task_path": "/Users/xxx/paopao-task/project-name",
+  "workspace_path": "/Users/xxx/projects/my-app",
+  "task_path": "/Users/xxx/projects/paopao-task/my-app",
+  "state_path": "/Users/xxx/projects/state/my-app",
+  "agent_md_path": "/Users/xxx/projects/my-app/agent.md",
   "started_at": "...",
   "updated_at": "..."
 }
 ```
+
+写入一律使用 `tools/file_ops.js writeJson`（先校验
+JSON 合法性），杜绝半截 JSON 损坏状态文件。
 
 ### 11.3 阶段流转
 
@@ -434,7 +445,8 @@ qa_plan ←─────────
 ### 11.5 状态更新指令
 
 ```bash
-node tools/file_ops.js write state/state.json \
+# STATE = {workspace_path 的上一级}/state/{project_name}
+node tools/file_ops.js writeJson "$STATE/state.json" \
   '<json_string>'
 ```
 
@@ -448,17 +460,28 @@ node tools/file_ops.js write state/state.json \
 执行：
 
 **1. 初始化项目**
-- 解析任务描述，确定项目名称
-- **读取 `workspace_path/agent.md`，提取配置
-  写入 `state.json` 的 `agent_config` 字段**
-- 若 `agent.md` 不存在，协助用户生成模板
-- 创建 `paopao-task/{project_name}/` 目录
-- 初始化 `state/state.json`
-- 执行**愿景与战略对齐**（见第二章）
+- 解析任务描述，确定项目名义名，并用
+  `node tools/file_ops.js slugify '<原始名>'` 归一化
+  为 `project_name`
+- 明确 `workspace_path`（用户当前项目目录），据此推导
+  `$TASK` 与 `$STATE`（均位于 workspace 上一级）
+- 判级 `project_size`（第三章 3.1 标准；写入 state.json）
+- **读取 `workspace_path/agent.md`，提取配置写入
+  `state.json` 的 `agent_config` 字段**，并记录
+  `agent_md_path`
+- 若 `agent.md` 不存在，按 `templates/agent-template.md`
+  协助用户生成
+- 用 `tools/file_ops.js writeJson` 初始化
+  `$STATE/state.json`（写入 schema 全部字段，
+  `pending_steps` 按 project_size 对应步序生成）
+- 创建 `$TASK/` 目录
+- 导出 `PAOPAO_STATE_DIR="$STATE"`（PM 的
+  `pm_state.js` 依赖）
+- 执行**愿景与战略对齐**（见第二章），写入 `$TASK/`
 - 执行**干系人识别**（见第五章）
-- 初始化**风险登记表**和**决策日志**
-- 确保 `state/patterns/` 目录存在
-- 输出项目初始化摘要
+- 初始化**风险登记表**和**决策日志**（写入 `$TASK/`）
+- 确保 `$STATE` 旁的 `patterns/` 目录存在
+- 输出项目初始化摘要（含判级结果与本次步序）
 
 **2. 调用 PM 角色**
 - 加载 `roles/product-manager/profile.md`
@@ -467,11 +490,17 @@ node tools/file_ops.js write state/state.json \
 - PM 依次执行：需求解构 → 市场调研 → 竞品分析
   → 方案推荐 → PRD 产出
 - PM 优先使用联网搜索进行真实数据调研，
-  再通过 `scripts/pm_research.js` 结构化分析
-- PM 使用 `scripts/pm_state.js` 管理自身状态
-- 中间报告写入 `paopao-task/{project_name}/`
-  （可选）
-- 最终 PRD 写入 `paopao-task/{project_name}/prd.md`
+  再通过 `roles/product-manager/scripts/pm_research.js` 结构化分析
+- PM 使用 `roles/product-manager/scripts/pm_state.js` 管理自身状态
+  （依赖 Director 导出的 `PAOPAO_STATE_DIR`）
+- 中间报告（market-report / competitive-report）
+  由 Director 落盘到 `$TASK/`（可选）
+- 最终 PRD 由 Director 落盘到
+  `$TASK/prd.md`
+- **可测性提前审查（测试左移）**：Director 依据
+  `roles/quality-assurance/profile.md` §三的清单
+  审查 PRD；severity=high 的不可测问题 > 0 时
+  退回 PM 量化修改，直至可测性达标
 - 执行质量门禁检查（见第八章）
 - 更新决策日志（如有决策请求被确认）
 - 更新风险登记表（如有新风险暴露）
@@ -482,8 +511,9 @@ node tools/file_ops.js write state/state.json \
 - 加载 `roles/ui-ux-designer/profile.md`
 - 使用 `context_loader.js` 按需读取 PRD
   并传递给 UI/UX
-- UI/UX 输出设计规范后，写入
-  `paopao-task/{project_name}/design.md`
+- UI/UX 输出设计规范后，由 Director 落盘到
+  `$TASK/design.md`
+  （small/medium 走 design-template 精简版）
 - 执行质量门禁检查
 - 更新决策日志和风险登记表
 - 更新 `state.json`
@@ -491,8 +521,9 @@ node tools/file_ops.js write state/state.json \
 **4. 调用 Dev 角色**
 - 加载 `roles/fullstack-dev-engineer/profile.md`
 - 读取 PRD 和设计规范传递给 Dev
-- Dev 输出技术方案后，写入
-  `paopao-task/{project_name}/dev-plan.md`
+- Dev 输出技术方案后，由 Director 落盘到
+  `$TASK/dev-plan.md`
+  （small/medium 走 dev-template 精简版路径）
 - 执行质量门禁检查
 - 更新决策日志和风险登记表
 - 更新 `state.json`
@@ -500,8 +531,8 @@ node tools/file_ops.js write state/state.json \
 **5. 调用 QA 角色**
 - 加载 `roles/quality-assurance/profile.md`
 - 读取 PRD、设计规范、技术方案传递给 QA
-- QA 输出测试计划后，写入
-  `paopao-task/{project_name}/qa-plan.md`
+- QA 输出测试计划后，由 Director 落盘到
+  `$TASK/qa-plan.md`（large 模式专属步骤）
 - 执行质量门禁检查
 - 更新决策日志和风险登记表
 - 更新 `state.json`
@@ -515,14 +546,16 @@ node tools/file_ops.js write state/state.json \
 当收到 `paopao-build / {task}` 指令后：
 
 **1. 验证状态**
-- 读取 `state.json`
-- 确保 `current_phase === "planning_complete"`
-- 如果状态不正确，提示用户先执行规划阶段
+- 读取 `$STATE/state.json`
+- 合法态：`planning_complete`（正常开建）、
+  `building`（中断续建）、`paused`（恢复）、
+  `cancelled`（重启确认）、`complete`（询问新版本）
+- 如果状态不存在或非法，提示用户先执行规划阶段
 
 **2. 设置构建阶段**
 - 更新 `current_phase` 为 `building`
-- 重置 `completed_steps` 和 `pending_steps`
-  为开发相关步骤
+- 按当前 `project_size` 对应的 `pending_steps`
+  继续（small: dev_code → qa_review）
 - 加载风险登记表和决策日志作为上下文
 
 **3. 调用 Dev 角色执行开发**
@@ -540,6 +573,10 @@ node tools/file_ops.js write state/state.json \
 - 加载 `roles/quality-assurance/profile.md`
 - QA 审查代码是否符合 PRD 契约
 - QA 执行测试，输出测试报告
+- **可选（用户要求 UI 验收且 `$TASK/design.md`
+  存在时）**：临时加载
+  `roles/ui-ux-designer/profile.md` §十四，
+  对关键页面执行 Design QA，偏差反馈 Dev 修复
 - 执行质量门禁检查：
   - 所有核心功能有测试覆盖
   - 无阻塞性 bug
@@ -547,7 +584,9 @@ node tools/file_ops.js write state/state.json \
 - 更新 `state.json`
 
 **5. 完成与复盘**
-- 执行**事后复盘**（见第十章）
+- 执行**事后复盘**（见第十章），写入
+  `$TASK/retrospective.md`
+- 模式沉淀到 `$STATE` 旁的 `patterns/` 目录
 - 设置 `current_phase` 为 `complete`
 - 输出项目完成报告
 
@@ -583,11 +622,14 @@ node tools/context_loader.js \
 可使用脚本生成：
 
 ```bash
+# STATE = {workspace_path 的上一级}/state/{project_name}
 node roles/project-director/scripts/\
   generate_handover_prompt.js \
-  state/state.json \
-  paopao-task/{project_name}
+  "$STATE/state.json"
 ```
+
+> `task_path` 自动回读 state.json；储备文档不全时
+> 脚本会报错并给出缺失清单。
 
 ### 14.2 交接内容
 

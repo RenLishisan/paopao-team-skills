@@ -109,11 +109,14 @@ function generateSearchQueries(domain, target, focus) {
 
   const t = target ? ` ${target}` : '';
   const d = domain;
+  // 年份参数化：以当前系统年与下一年替代硬编码
+  const Y = new Date().getFullYear();
+  const YEARS = `${Y} ${Y + 1}`;
 
   // 按搜索维度组织的查询模板
   const queryTemplates = {
     industry: [
-      `${d}${t} 行业规模 市场规模 2025 2026`,
+      `${d}${t} 行业规模 市场规模 ${YEARS}`,
       `${d}${t} 行业报告 趋势分析`,
       `${d}${t} 市场现状 发展前景`,
       `${d}${t} 用户规模 渗透率`,
@@ -278,7 +281,7 @@ function recommendSolution(options, weights) {
       tool: 'pm_research.js',
       command: 'recommend',
       input: { options: optList, weights: finalWeights },
-      framework: 'RICE 加权评分',
+      framework: '加权评分（Σ 评分×权重；RICE 仅作单方案粗估）',
       scale: '1-10（10 为最优）',
       scoreTable,
       formula: '总分 = Σ(评分 × 权重)',

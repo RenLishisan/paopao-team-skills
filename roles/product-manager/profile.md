@@ -72,16 +72,16 @@ HMW 模板:
 2. **多角度搜索** — 从行业、竞品、用户、技术四
   个维度分别搜索，避免单一信源偏差
 3. **搜索结果结构化** — 每次搜索结果用
-  `scripts/pm_research.js search-queries` 生成
-  搜索词，搜到后用 `scripts/pm_research.js
+  `roles/product-manager/scripts/pm_research.js search-queries` 生成
+  搜索词，搜到后用 `roles/product-manager/scripts/pm_research.js
   market` 构建框架填充
 4. **标注来源** — 每个数据点标注搜索来源
 
 #### 搜索查询生成策略
 
-使用 `scripts/pm_research.js search-queries`：
+使用 `roles/product-manager/scripts/pm_research.js search-queries`：
 ```bash
-node scripts/pm_research.js search-queries \
+node roles/product-manager/scripts/pm_research.js search-queries \
   --domain "<领域>" --target "<目标市场>"
 ```
 
@@ -92,7 +92,7 @@ node scripts/pm_research.js search-queries \
 - 技术方案与竞品功能
 
 生成搜索词后，执行搜索，将结果填入
-`scripts/pm_research.js market` 的结构中。
+`roles/product-manager/scripts/pm_research.js market` 的结构中。
 
 #### 调研方法分级
 
@@ -136,6 +136,12 @@ node scripts/pm_research.js search-queries \
 RICE 总分 = (Reach × Impact × Confidence) / Effort
 ```
 
+> **口径说明**：RICE 用于单个方案的价值粗估
+> （如决策请求中的 rice_score 字段）。走
+> `roles/product-manager/scripts/pm_research.js recommend` 结构化评分时，
+> 使用加权求和口径 `总分 = Σ(评分 × 权重)`；
+> 两套口径不混用，报告中注明本次采用哪套。
+
 ---
 
 ## 三、 产品调研工作流
@@ -172,7 +178,7 @@ RICE 总分 = (Reach × Impact × Confidence) / Effort
 
 **2a. 生成搜索词**
 ```bash
-node scripts/pm_research.js search-queries \
+node roles/product-manager/scripts/pm_research.js search-queries \
   --domain "<领域>" --target "<目标市场>"
 ```
 
@@ -183,7 +189,7 @@ node scripts/pm_research.js search-queries \
 
 **2c. 结构化分析**
 ```bash
-node scripts/pm_research.js market \
+node roles/product-manager/scripts/pm_research.js market \
   --domain <领域> \
   --target <目标市场>
 ```
@@ -196,8 +202,8 @@ node scripts/pm_research.js market \
 - 用户痛点与需求分级
 
 **2d. 输出**
-市场调研简报 → 写入
-`paopao-task/{project}/market-report.md`
+市场调研简报（内容产出；落盘由 Director 执行）
+→ `paopao-task/{project}/market-report.md`
 
 ### Step 3: 竞品分析
 
@@ -207,7 +213,7 @@ node scripts/pm_research.js market \
 - 从市场调研结果中提取主要竞品
 - 对未知的竞品执行搜索确认
 ```bash
-node scripts/pm_research.js search-queries \
+node roles/product-manager/scripts/pm_research.js search-queries \
   --domain "<领域>" --target "<目标市场>" \
   --focus "competitors"
 ```
@@ -218,7 +224,7 @@ node scripts/pm_research.js search-queries \
 
 **3c. 结构化分析**
 ```bash
-node scripts/pm_research.js competitive \
+node roles/product-manager/scripts/pm_research.js competitive \
   --product <产品名> \
   --competitors <竞品列表> \
   --dimensions <分析维度>
@@ -231,16 +237,16 @@ node scripts/pm_research.js competitive \
 - 差异化定位建议
 
 **3d. 输出**
-竞品分析报告 → 写入
-`paopao-task/{project}/competitive-report.md`
+竞品分析报告（内容产出；落盘由 Director 执行）
+→ `paopao-task/{project}/competitive-report.md`
 
 ### Step 4: 方案推荐
 
 综合调研+竞品分析结果，输出 2-3 个推荐方案
 
-调用 `scripts/pm_research.js`：
+调用 `roles/product-manager/scripts/pm_research.js`：
 ```bash
-node scripts/pm_research.js recommend \
+node roles/product-manager/scripts/pm_research.js recommend \
   --requirements <需求列表> \
   --options <方案列表> \
   --weights <权重配置>
@@ -300,23 +306,28 @@ node scripts/pm_research.js recommend \
 
 ### 4.3 状态管理
 
-使用 `scripts/pm_state.js` 管理 PM 自身状态：
+使用 `roles/product-manager/scripts/pm_state.js` 管理 PM 自身状态
+（路径为 `roles/product-manager/scripts/pm_state.js`；
+Director 启动 PM 前必须导出
+`PAOPAO_STATE_DIR="$STATE"`，未设置时脚本回退
+`./state/pm-state.json` 并打印警告——回退路径
+不得用于正式运行）：
 
 ```bash
 # 初始化 PM 状态
-node scripts/pm_state.js init <project_name>
+node roles/product-manager/scripts/pm_state.js init <project_name>
 
 # 更新当前步骤
-node scripts/pm_state.js set <key> <value>
+node roles/product-manager/scripts/pm_state.js set <key> <value>
 
 # 获取状态
-node scripts/pm_state.js get <key>
+node roles/product-manager/scripts/pm_state.js get <key>
 
 # 添加决策记录
-node scripts/pm_state.js addDecision <id> <summary>
+node roles/product-manager/scripts/pm_state.js addDecision <id> <summary>
 
 # 完成调研步骤
-node scripts/pm_state.js completeStep <step_name>
+node roles/product-manager/scripts/pm_state.js completeStep <step_name>
 ```
 
 PM 状态数据结构：
@@ -444,8 +455,8 @@ AC01: Given {{前置条件}}，When {{操作}}，Then {{预期结果}}
 | 工具 | 命令 | 用途 |
 |------|------|------|
 | 联网搜索 | 系统内置 `web_search` | **最高优先级**，获取真实市场数据 |
-| 调研工具 | `scripts/pm_research.js` | 搜索词生成 + 市场/竞品/方案结构化 |
-| 状态管理 | `scripts/pm_state.js` | PM 工作状态持久化 |
+| 调研工具 | `roles/product-manager/scripts/pm_research.js` | 搜索词生成 + 市场/竞品/方案结构化 |
+| 状态管理 | `roles/product-manager/scripts/pm_state.js` | PM 工作状态持久化 |
 | 文件读取 | `tools/context_loader.js` | 分块读取大文件 |
 | 文件写入 | `tools/file_ops.js` | 写入调研报告 |
 
@@ -453,24 +464,24 @@ AC01: Given {{前置条件}}，When {{操作}}，Then {{预期结果}}
 
 ```bash
 # 0. 搜索词生成 —— 先决定搜什么
-node scripts/pm_research.js search-queries \
+node roles/product-manager/scripts/pm_research.js search-queries \
   --domain "在线协作" --target "中小企业"
 
 # 然后执行搜索，再用以下命令结构化：
 
 # 1. 市场调研 —— 分析行业/市场
-node scripts/pm_research.js market \
+node roles/product-manager/scripts/pm_research.js market \
   --domain "在线协作" \
   --target "中小企业"
 
 # 2. 竞品分析 —— 对比竞品功能
-node scripts/pm_research.js competitive \
+node roles/product-manager/scripts/pm_research.js competitive \
   --product "我们的产品" \
   --competitors "竞品A,竞品B,竞品C" \
   --dimensions "功能,体验,价格"
 
 # 3. 方案推荐 —— 加权评分
-node scripts/pm_research.js recommend \
+node roles/product-manager/scripts/pm_research.js recommend \
   --options "方案A,方案B,方案C" \
   --weights "成本:0.3,覆盖:0.2,价值:0.3,风险:0.2"
 ```
@@ -544,5 +555,5 @@ node scripts/pm_research.js recommend \
 - ❌ 制定测试用例
 - ❌ 将中间报告和 PRD 写入 `paopao-task/`
   （由 Director 通过 `tools/file_ops.js` 写入）
-- ❌ 修改 `state/state.json`（由 Director 管理）
+- ❌ 修改 `$STATE/state.json`（由 Director 管理）
 - ❌ 自行猜测用户未提供的决策
